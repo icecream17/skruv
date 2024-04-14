@@ -1,28 +1,34 @@
 #!/usr/bin/env node
-/* global Location */
-import './minidom.js'
-
+import vm from "node:vm";
 import { readFile, writeFile } from 'node:fs/promises'
+import { resolve } from "node:path";
 
-(async () => {
-  // @ts-expect-error: Check both deno and node arguments
-  const location = globalThis?.process?.argv?.[2] || globalThis?.Deno?.args?.[0]
-  // @ts-expect-error: Check both deno and node arguments
-  const input = globalThis?.process?.argv?.[3] || globalThis?.Deno?.args?.[1]
-  // @ts-expect-error: Check both deno and node arguments
-  const output = globalThis?.process?.argv?.[4] || globalThis?.Deno?.args?.[2]
+import { createContext, Location } from "skruv/utils/minidom.js";
 
-  if (!location || !input || !output) {
-    console.error('please supply a location url, one input file and one output path')
-    // @ts-expect-error: Deno and node compat
-    if (globalThis?.process) { globalThis.process.exit(1) } else if (globalThis?.Deno) { globalThis.Deno.exit(1) }
-  }
+const location = process.argv[2]
+const input = process.argv[3]
+const output = process.argv[4]
 
-  // @ts-expect-error
-  globalThis.location = new Location(location)
-  // @ts-expect-error
-  globalThis.skruvSSRScript = await readFile(input, 'utf8')
-  const frontend = await import(process.cwd() + '/' + input)
-  if (frontend.default instanceof Function) { await frontend.default() }
-  await writeFile(output, document.documentElement.innerHTML)
-})()
+if (!location || !input || !output) {
+  console.error('please supply a location url, one input file and one output path')
+  process.exit(1)
+}
+
+const skruvSSRScript = await readFile(resolve(process.cwd(), '/', input), "utf8");
+
+const _fetch = fetch;
+
+const context = {
+  ...createContext(),
+  skruvSSRScript,
+  location: new Location(location),
+  console,
+  fetch: async (url, opt = {}) => _fetch(new URL(url, location), opt)
+}
+
+const contextifiedObject = vm.createContext(context);
+const runningVm = new vm.SourceTextModule(skruvSSRScript, { context: contextifiedObject })
+await runningVm.link(async function linker(specifier, referencingModule) { throw new Error(`Unable to resolve dependency: ${specifier}`) })
+await runningVm.evaluate()
+await contextifiedObject.finish();
+await writeFile(output, contextifiedObject.document.documentElement.innerHTML)

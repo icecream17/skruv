@@ -6,56 +6,20 @@ const mathmlNS = 'http://www.w3.org/1998/Math/MathML'
 const atomNS = 'http://www.w3.org/2005/Atom'
 const sitemapNS = 'https://www.sitemaps.org/schemas/sitemap/0.9'
 
-// CSSOM polyfill
-globalThis.CSSOM = cssom
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.CSSMediaRule = cssom.CSSMediaRule
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.CSSStyleRule = cssom.CSSStyleRule
-
 // Minimal, naive DOM implementation. Enough for skruv
-const document = {
-  /** @type {HTMLElement?} */
-  documentElement: null,
-  /**
-   * @param {string} data
-   * @returns {HTMLElement}
-   */
-  createComment: data => new Comment(data),
-  /**
-   * @param {string} data
-   * @returns {Text}
-   */
-  createTextNode: data => new Text(data),
-  /**
-   * @param {htmlNS|svgNS|mathmlNS} ns
-   * @param {string} nodeName
-   * @returns {Element}
-   */
-  createElementNS: (ns, nodeName) => {
-    if (ns === htmlNS) { return new HTMLElement(nodeName) }
-    if (ns === svgNS) { return new SVGElement(nodeName) }
-    if (ns === mathmlNS) { return new MathMLElement(nodeName) }
-    if (ns === atomNS) { return new AtomElement(nodeName) }
-    if (ns === sitemapNS) { return new SitemapElement(nodeName) }
-    throw new Error('Unkown namespace: ' + ns)
-  },
-  querySelector: () => null,
-  querySelectorAll: () => []
-}
-
 export class Element {
   /** @param {string} nodeName */
-  constructor (nodeName = '') {
+  constructor(nodeName = '') {
     /** @type {Element[]} */
     this.childNodes = []
+    /** @type {Element?} */
+    this.ownerDocument = null
     /** @type {{ [key: string]: string; }} */
     this.attributes = {}
     /** @type {Element?} */
     this.parentNode = null
     /** @type {{ [key: string]: function[]; }} */
     this.eventListeners = {}
-    this.ownerDocument = document
     this.nodeName = nodeName
     this.data = ''
     this.isSvg = false
@@ -65,26 +29,30 @@ export class Element {
    * @param {Element} newNode
    * @param {Element} oldNode
    */
-  replaceChild (newNode, oldNode) {
+  replaceChild(newNode, oldNode) {
     if (newNode.parentNode) { newNode.parentNode.childNodes.splice(newNode.parentNode.childNodes.indexOf(newNode), 1) }
     this.childNodes[this.childNodes.indexOf(oldNode)] = newNode
     newNode.parentNode = this
+    newNode.ownerDocument = this.ownerDocument
     oldNode.parentNode = null
-    if (oldNode === document.documentElement) {
-      document.documentElement = newNode
+    oldNode.ownerDocument = null
+    if (oldNode === this.documentElement) {
+      this.documentElement = newNode
     }
   }
 
   /** @param {Element} node */
-  appendChild (node) {
+  appendChild(node) {
     if (node.parentNode) { node.parentNode.childNodes.splice(node.parentNode.childNodes.indexOf(node), 1) }
     this.childNodes.push(node)
     node.parentNode = this
+    node.ownerDocument = this.ownerDocument
   }
 
   /** @param {Element} node */
-  removeChild (node) {
+  removeChild(node) {
     node.parentNode = null
+    node.ownerDocument = null
     this.childNodes.splice(this.childNodes.indexOf(node), 1)
   }
 
@@ -92,27 +60,28 @@ export class Element {
    * @param {Element} newNode
    * @param {Element} oldNode
    */
-  insertBefore (newNode, oldNode) {
+  insertBefore(newNode, oldNode) {
     if (newNode.parentNode) { newNode.parentNode.childNodes.splice(newNode.parentNode.childNodes.indexOf(newNode), 1) }
     this.childNodes.splice(this.childNodes.indexOf(oldNode), 0, newNode)
     newNode.parentNode = this
+    newNode.ownerDocument = this.ownerDocument
   }
 
-  replaceChildren () {
+  replaceChildren() {
     this.childNodes = []
   }
 
   /** @param {string | number} name */
-  getAttribute (name) {
+  getAttribute(name) {
     return this.attributes[name]
   }
 
   /** @param {string | number} name */
-  removeAttribute (name) {
+  removeAttribute(name) {
     delete this.attributes[name]
   }
 
-  getAttributeNames () {
+  getAttributeNames() {
     return Object.keys(this.attributes)
   }
 
@@ -120,7 +89,7 @@ export class Element {
    * @param {string | number} name
    * @param {any} value
    */
-  setAttribute (name, value) {
+  setAttribute(name, value) {
     this.attributes[name] = value
   }
 
@@ -128,7 +97,7 @@ export class Element {
    * @param {string | number} name
    * @param {Function} value
    */
-  removeEventListener (name, value) {
+  removeEventListener(name, value) {
     delete this.eventListeners[name]
   }
 
@@ -136,7 +105,7 @@ export class Element {
    * @param {string | number} name
    * @param {function} value
    */
-  addEventListener (name, value) {
+  addEventListener(name, value) {
     if (!this.eventListeners[name]) {
       this.eventListeners[name] = []
     }
@@ -144,7 +113,7 @@ export class Element {
   }
 
   /** @param {Event} event */
-  dispatchEvent (event) {
+  dispatchEvent(event) {
     if (this.eventListeners[event.type]) {
       this.eventListeners[event.type].forEach(listener => listener({
         ...event,
@@ -156,31 +125,31 @@ export class Element {
   }
 
   /** @param {Element} node */
-  contains (node) {
+  contains(node) {
     return true
   }
 
   /** @returns {Element} */
-  cloneNode () {
+  cloneNode() {
     if (this.nodeName === 'skruvComment') { return new Comment(this.data) }
     if (this.nodeName === '#text') { return new Text(this.data) }
     // @ts-expect-error: We need to clone this element
     return new this.constructor(this.nodeName)
   }
 
-  get children () {
+  get children() {
     return this.childNodes.filter(e => e.nodeName !== '#text' && e.nodeName !== 'skruvComment')
   }
 
-  get innerHTML () {
+  get innerHTML() {
     return toHTML(this, '', {})
   }
 
-  get textContent () {
+  get textContent() {
     return toText(this)
   }
 
-  set textContent (data) {
+  set textContent(data) {
     if (!(this instanceof Text || this instanceof Comment)) {
       const text = new Text(data)
       this.childNodes = [text]
@@ -200,7 +169,7 @@ export class HTMLOptionElement extends HTMLElement { }
 export class HTMLInputElement extends HTMLElement { }
 
 export class Text extends Element {
-  constructor (data = '') {
+  constructor(data = '') {
     super('#text')
     /** @type {string} */
     this.data = data
@@ -208,58 +177,72 @@ export class Text extends Element {
 }
 
 export class Comment extends Element {
-  constructor (data = '') {
+  constructor(data = '') {
     super('skruvComment')
     /** @type {string} */
     this.data = data
   }
 }
 
+export class HTMLDocument extends Element {
+  constructor() {
+    super('document')
+    /** @type {HTMLElement?} */
+    this.documentElement = new HTMLElement('html')
+    this.documentElement.ownerDocument = this.documentElement
+    this.documentElement.parentNode = this
+    this.childNodes = [this.documentElement]
+  }
+  /**
+   * @param {string} data
+   * @returns {HTMLElement}
+   */
+  createComment(data) {
+    return new Comment(data)
+  }
+  /**
+   * @param {string} data
+   * @returns {Text}
+   */
+  createTextNode(data){
+    return new Text(data)
+  }
+  /**
+   * @param {htmlNS|svgNS|mathmlNS} ns
+   * @param {string} nodeName
+   * @returns {Element}
+   */
+  createElementNS(ns, nodeName){
+    if (ns === htmlNS) { return new HTMLElement(nodeName) }
+    if (ns === svgNS) { return new SVGElement(nodeName) }
+    if (ns === mathmlNS) { return new MathMLElement(nodeName) }
+    if (ns === atomNS) { return new AtomElement(nodeName) }
+    if (ns === sitemapNS) { return new SitemapElement(nodeName) }
+    throw new Error('Unkown namespace: ' + ns)
+  }
+}
+
 export class Location extends URL {
-  get ancestorOrigins () {
+  get ancestorOrigins() {
     return {
       length: 0,
       item: () => null,
       contains: () => false,
-      [Symbol.iterator]: function * () { }
+      [Symbol.iterator]: function* () { }
     }
   }
 
   /** @param {string|URL} url */
-  assign (url) {
+  assign(url) {
     this.constructor(url)
   }
 
-  reload () { }
+  reload() { }
   /** @param {string|URL} url */
-  replace (url) {
+  replace(url) {
     this.constructor(url)
   }
 }
-
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.Location = Location
-
-// Global MiniDOM classes for use in instanceof
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.Element = Element
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.HTMLOptionElement = HTMLOptionElement
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.HTMLInputElement = HTMLInputElement
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.SVGElement = SVGElement
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.HTMLElement = HTMLElement
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.MathMLElement = MathMLElement
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.Text = Text
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.Comment = Comment
-
-// global variable to indicate that we are in an SSR setting
-globalThis.isSkruvSSR = true
 
 // Fake EventSource
 export class EventSource {
@@ -267,31 +250,15 @@ export class EventSource {
    * @param {URL | string} _url
    * @param {EventSourceInit} [_init]
    */
-  constructor (_url, _init) {
+  constructor(_url, _init) {
     this.CONNECTING = 0
     this.OPEN = 1
     this.CLOSED = 2
   }
 
-  addEventListener () { }
-  close () { }
+  addEventListener() { }
+  close() { }
 }
-// @ts-expect-error: Type confusion between polyfilled and real elements
-globalThis.EventSource = EventSource
-
-if (!globalThis?.addEventListener) { globalThis.addEventListener = () => { } }
-
-// Reset function to get a new global document
-export const reset = () => {
-  const rootElement = new HTMLElement('document')
-  const documentElement = new HTMLElement('html')
-  documentElement.parentNode = rootElement
-  rootElement.childNodes = [documentElement]
-  document.documentElement = documentElement
-  // @ts-expect-error: Type confusion between polyfilled and real elements
-  globalThis.document = document
-}
-reset()
 
 // HTML rendering utils
 
@@ -325,15 +292,15 @@ const htmlAttr = (/** @type {[string, string]} */[name, value]) =>
 const htmlTag = (vDom, headers) => {
   if (['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'].includes(vDom.nodeName.toLowerCase())) {
     return `<${quoteattr(vDom.nodeName.toLowerCase())}${!Object.entries(vDom.attributes).length
-        ? ''
-        : (' ' + Object.entries(vDom.attributes).map(htmlAttr)
-          .join(' '))
-      }/>`
-  }
-  return `<${quoteattr(vDom.nodeName)}${!Object.entries(vDom.attributes).length
       ? ''
       : (' ' + Object.entries(vDom.attributes).map(htmlAttr)
         .join(' '))
+      }/>`
+  }
+  return `<${quoteattr(vDom.nodeName)}${!Object.entries(vDom.attributes).length
+    ? ''
+    : (' ' + Object.entries(vDom.attributes).map(htmlAttr)
+      .join(' '))
     }>${vDom.childNodes.map(e =>
       toHTML(e, vDom.nodeName, headers)
     ).join('')
@@ -422,3 +389,23 @@ export const toText = vDom => {
     return vDom.childNodes.map(e => toText(e)).join('')
   }
 }
+
+export const createContext = () => ({
+    URL,
+    CSSOM: cssom,
+    CSSMediaRule: cssom.CSSMediaRule,
+    CSSStyleRule: cssom.CSSStyleRule,
+    document: new HTMLDocument(),
+    Location,
+    Element,
+    HTMLOptionElement,
+    HTMLInputElement,
+    SVGElement,
+    HTMLElement,
+    MathMLElement,
+    Text,
+    Comment,
+    EventSource,
+    addEventListener: () => { },
+    isSkruvSSR: true
+})
