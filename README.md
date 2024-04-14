@@ -207,7 +207,7 @@ Utilities:
   * You can subscribe to sub-objects with `for await (const bar of state.foo.bar)`.
   * As a shortcut you can call `state.getGenerator`(key) to subscribe to and output a single value.
     * This is useful to output primitive values (like strings/numbers etc.) in for example text or attributes without requiring a whole generator function
-* minidom.js: SSR/SSG examples are bundled in this repo, they use the minidom utility to polyfill what is needed to use skruv in node/deno and serialize the DOM to HTML.
+* minidom.js: SSR/SSG examples are bundled in this repo, they use the minidom utility to polyfill what is needed to use skruv in node and serialize the DOM to HTML.
   * uses cssom.js (ported from <https://github.com/NV/CSSOM>) to polyfill the CSS object model to work with css.js
 
 Other packages:
@@ -303,7 +303,7 @@ render(
 
 ## SSG/SSR
 
-The example folder ssr contains SSR examples for both node and deno. They both use the minidom util to polyfill a "browser-ish" environment. Primarily it mimics the DOM, the CSS object model, the Location interface, EventSource. It also has utils to stringify the html and reset the DOM.
+The example folder ssr contains SSR examples for node. It uses the minidom util to polyfill a "browser-ish" environment. Primarily it mimics the DOM, the CSS object model, the Location interface, EventSource. It also has utils to stringify the html and reset the DOM. It uses the node `vm` to provide isolation between requests.
 
 Since most resulting apps will be very small (this one is under 4kb after compression) we inline it into the html here, but there would be no problem to link the script normally. Weigh the pros and cons for your use-case.
 
