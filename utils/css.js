@@ -188,10 +188,13 @@ export const css = (strings, ...keys) => {
     return retval
   }
   let sheet
+  // @ts-ignore
   if (!globalThis?.CSSOM && !globalThis.document?.implementation) {
     throw new Error('No css parser available. Either add CSSOM to globalThis or run in browser.')
   }
+  // @ts-ignore
   if (globalThis?.CSSOM) {
+    // @ts-ignore
     sheet = CSSOM.parse(stylesheet)
   } else {
     // In FF/Chrome we could create the sheet with new CSSStyleSheet(), but that does not work in safari lower than 16.4 (Released 2023-03-27)

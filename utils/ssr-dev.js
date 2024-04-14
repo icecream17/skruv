@@ -1,23 +1,19 @@
 #!/usr/bin/env node
-/* global Location */
 import esbuild from 'esbuild'
-import { randomBytes } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
+import { resolve } from 'node:path'
+import vm from 'node:vm'
 
 import httpPlugin from './esbuildHttpPlugin.js'
-import { reset, toHTML } from './minidom.js'
+import { createContext, Location, toHTML } from './minidom.js'
 
-// This file is meant to work with both node and deno
-// @ts-expect-error: Check both deno and node arguments
-const input = globalThis?.process?.argv?.[2] || globalThis?.Deno?.args?.[0]
-// @ts-expect-error: Check both deno and node arguments
-const output = globalThis?.process?.argv?.[3] || globalThis?.Deno?.args?.[1]
+const input = process.argv[2]
+const output = process.argv[3]
 
 if (!input || !output) {
   console.error('please supply one input file and one output path')
-  // @ts-expect-error: Deno and node compat
-  if (globalThis?.process) { globalThis.process.exit(1) } else if (globalThis?.Deno) { globalThis.Deno.exit(1) }
+  process.exit(1)
 }
 
 /** @type {Array<Function>} */
@@ -55,8 +51,9 @@ const SSEPlugin = {
   await ctx.watch()
 })()
 
-const server = createServer()
-server.on('request', async (req, res) => {
+const _fetch = fetch
+
+createServer(async (req, res) => {
   if (req.url === '/_skruv_sse_reload') {
     res.statusCode = 200
     res.setHeader('content-type', 'text/event-stream; charset=utf-8')
@@ -80,27 +77,31 @@ server.on('request', async (req, res) => {
       }
     }, 1000)
   } else {
-    // @ts-expect-error
-    globalThis.location = new Location(new URL(req.url, `http://${req.headers.host}`))
-    // @ts-expect-error
-    globalThis.skruvSSRScript = await readFile(output, 'utf8')
-    // Force reexecution for each run by appending a query-string
-    const frontend = await import(process.cwd() + '/' + output + '?' + randomBytes(32).toString('hex'))
-    // TODO: Should not be needed when top-level-await is properly supported
-    if (frontend.default instanceof Function) { await frontend.default() }
+    const reqUrl = new Location(new URL(req.url || '', `http://${req.headers.host}`))
+    const skruvSSRScript = await readFile(resolve(process.cwd(), input), 'utf8')
+
+    const context = {
+      ...createContext(),
+      skruvSSRScript,
+      location: reqUrl,
+      console,
+      fetch: async (/** @type {string | URL} */ url, opt = {}) => _fetch(new URL(url, reqUrl), opt)
+    }
+
+    const contextifiedObject = vm.createContext(context)
+    const runningVm = new vm.SourceTextModule(skruvSSRScript, { context: contextifiedObject })
+    await runningVm.link(async function linker (specifier, referencingModule) { throw new Error(`Unable to resolve dependency: ${specifier}`) })
+    await runningVm.evaluate()
+    await contextifiedObject.finish()
+
     /** @type {Record<string, string>} */
     const headers = {}
-    // @ts-expect-error
-    const responseBody = toHTML(document.documentElement, '', headers)
-    reset()
-    res.statusCode = parseInt(headers.status) || 200
-    for (const key in headers) {
-      res.setHeader(key, headers[key])
-    }
-    res.end(responseBody)
+    const body = toHTML(contextifiedObject.document.documentElement, '', headers)
+    res.statusCode = parseInt(headers.status || '200')
+    delete headers.status
+    for (const key in headers) { res.setHeader(key, headers[key]) }
+    res.end(body)
   }
-})
-
-server.listen(process.env.PORT || 8000)
+}).listen(process.env.PORT || 8000)
 
 console.log(`listening on http://127.0.0.1:${process.env.PORT || 8000}. Change port with the environment variable PORT`)

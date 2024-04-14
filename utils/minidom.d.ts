@@ -3,6 +3,8 @@ export class Element {
     constructor(nodeName?: string);
     /** @type {Element[]} */
     childNodes: Element[];
+    /** @type {Element?} */
+    ownerDocument: Element | null;
     /** @type {{ [key: string]: string; }} */
     attributes: {
         [key: string]: string;
@@ -12,28 +14,6 @@ export class Element {
     /** @type {{ [key: string]: function[]; }} */
     eventListeners: {
         [key: string]: Function[];
-    };
-    ownerDocument: {
-        /** @type {HTMLElement?} */
-        documentElement: HTMLElement | null;
-        /**
-         * @param {string} data
-         * @returns {HTMLElement}
-         */
-        createComment: (data: string) => HTMLElement;
-        /**
-         * @param {string} data
-         * @returns {Text}
-         */
-        createTextNode: (data: string) => Text;
-        /**
-         * @param {htmlNS|svgNS|mathmlNS} ns
-         * @param {string} nodeName
-         * @returns {Element}
-         */
-        createElementNS: (ns: "http://www.w3.org/1999/xhtml" | "http://www.w3.org/2000/svg" | "http://www.w3.org/1998/Math/MathML", nodeName: string) => Element;
-        querySelector: () => null;
-        querySelectorAll: () => never[];
     };
     nodeName: string;
     data: string;
@@ -102,6 +82,27 @@ export class Text extends Element {
 }
 export class Comment extends Element {
 }
+export class HTMLDocument extends Element {
+    constructor();
+    /** @type {Element?} */
+    documentElement: Element | null;
+    /**
+     * @param {string} data
+     * @returns {HTMLElement}
+     */
+    createComment(data: string): HTMLElement;
+    /**
+     * @param {string} data
+     * @returns {Text}
+     */
+    createTextNode(data: string): Text;
+    /**
+     * @param {htmlNS|svgNS|mathmlNS} ns
+     * @param {string} nodeName
+     * @returns {Element}
+     */
+    createElementNS(ns: "http://www.w3.org/1999/xhtml" | "http://www.w3.org/2000/svg" | "http://www.w3.org/1998/Math/MathML", nodeName: string): Element;
+}
 export class Location extends URL {
     get ancestorOrigins(): {
         length: number;
@@ -127,8 +128,613 @@ export class EventSource {
     addEventListener(): void;
     close(): void;
 }
-export function reset(): void;
 export function toHTML(vDom: HTMLElement, context: string, headers: {
     [key: string]: string;
 }): string;
 export function toText(vDom: HTMLElement): string;
+export function createContext(): {
+    URL: {
+        new (url: string | URL, base?: string | URL | undefined): URL;
+        prototype: URL;
+        createObjectURL(obj: Blob | MediaSource): string;
+        revokeObjectURL(url: string): void;
+    };
+    CSSOM: {
+        CSSStyleDeclaration: {
+            new (): {
+                length: number;
+                parentRule: any;
+                _importants: {};
+                getPropertyValue(name: string): string;
+                setProperty(name: string, value: string, priority?: string | undefined): void;
+                removeProperty(name: string): string;
+                getPropertyCSSValue(): void;
+                getPropertyPriority(name: string): any;
+                getPropertyShorthand(): void;
+                isPropertyImplicit(): void;
+                cssText: string;
+            };
+        };
+        CSSRule: {
+            new (): {
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSGroupingRule: {
+            new (): {
+                cssRules: any[];
+                insertRule(rule: string, index?: number | undefined): number;
+                deleteRule(index: number): void;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSConditionRule: {
+            new (): {
+                conditionText: string;
+                cssRules: any[];
+                cssText: any;
+                insertRule(rule: string, index?: number | undefined): number;
+                deleteRule(index: number): void;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSStyleRule: {
+            new (): {
+                selectorText: string;
+                style: {
+                    length: number;
+                    parentRule: any;
+                    _importants: {};
+                    getPropertyValue(name: string): string;
+                    setProperty(name: string, value: string, priority?: string | undefined): void;
+                    removeProperty(name: string): string;
+                    getPropertyCSSValue(): void;
+                    getPropertyPriority(name: string): any;
+                    getPropertyShorthand(): void;
+                    isPropertyImplicit(): void;
+                    cssText: string;
+                };
+                type: number;
+                cssText: string;
+                parse(ruleText: string): any;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        MediaList: {
+            new (): {
+                length: number;
+                mediaText: string;
+                appendMedium(medium: string): void;
+                deleteMedium(medium: string): void;
+            };
+        };
+        CSSMediaRule: {
+            new (): {
+                media: {
+                    length: number;
+                    mediaText: string;
+                    appendMedium(medium: string): void;
+                    deleteMedium(medium: string): void;
+                };
+                type: number;
+                conditionText: string;
+                readonly cssText: string;
+                cssRules: any[];
+                insertRule(rule: string, index?: number | undefined): number;
+                deleteRule(index: number): void;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSSupportsRule: {
+            new (): {
+                type: number;
+                readonly cssText: string;
+                conditionText: string;
+                cssRules: any[];
+                insertRule(rule: string, index?: number | undefined): number;
+                deleteRule(index: number): void;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSImportRule: {
+            new (): {
+                href: string;
+                media: {
+                    length: number;
+                    mediaText: string;
+                    appendMedium(medium: string): void;
+                    deleteMedium(medium: string): void;
+                };
+                styleSheet: {
+                    cssRules: any[];
+                    insertRule(rule: string, index: number): number;
+                    deleteRule(index: number): void;
+                    toString(): string;
+                    parentStyleSheet: any;
+                };
+                type: number;
+                cssText: string;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSFontFaceRule: {
+            new (): {
+                style: {
+                    length: number;
+                    parentRule: any;
+                    _importants: {};
+                    getPropertyValue(name: string): string;
+                    setProperty(name: string, value: string, priority?: string | undefined): void;
+                    removeProperty(name: string): string;
+                    getPropertyCSSValue(): void;
+                    getPropertyPriority(name: string): any;
+                    getPropertyShorthand(): void;
+                    isPropertyImplicit(): void;
+                    cssText: string;
+                };
+                type: number;
+                readonly cssText: string;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSHostRule: {
+            new (): {
+                cssRules: any[];
+                type: number;
+                readonly cssText: string;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        StyleSheet: {
+            new (): {
+                parentStyleSheet: any;
+            };
+        };
+        CSSStyleSheet: {
+            new (): {
+                cssRules: any[];
+                insertRule(rule: string, index: number): number;
+                deleteRule(index: number): void;
+                toString(): string;
+                parentStyleSheet: any;
+            };
+        };
+        CSSKeyframesRule: {
+            new (): {
+                name: string;
+                cssRules: any[];
+                type: number;
+                readonly cssText: string;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSKeyframeRule: {
+            new (): {
+                keyText: string;
+                style: {
+                    length: number;
+                    parentRule: any;
+                    _importants: {};
+                    getPropertyValue(name: string): string;
+                    setProperty(name: string, value: string, priority?: string | undefined): void;
+                    removeProperty(name: string): string;
+                    getPropertyCSSValue(): void;
+                    getPropertyPriority(name: string): any;
+                    getPropertyShorthand(): void;
+                    isPropertyImplicit(): void;
+                    cssText: string;
+                };
+                type: number;
+                readonly cssText: string;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        MatcherList: {
+            new (): {
+                length: number;
+                matcherText: string;
+                appendMatcher(matcher: string): void;
+                deleteMatcher(matcher: string): void;
+            };
+        };
+        CSSDocumentRule: {
+            new (): {
+                matcher: {
+                    length: number;
+                    matcherText: string;
+                    appendMatcher(matcher: string): void;
+                    deleteMatcher(matcher: string): void;
+                };
+                cssRules: any[];
+                type: number;
+                readonly cssText: string;
+                parentRule: any;
+                parentStyleSheet: any;
+                UNKNOWN_RULE: number; /** @type {string} */
+                STYLE_RULE: number;
+                CHARSET_RULE: number;
+                IMPORT_RULE: number;
+                MEDIA_RULE: number;
+                FONT_FACE_RULE: number;
+                PAGE_RULE: number;
+                KEYFRAMES_RULE: number;
+                KEYFRAME_RULE: number;
+                MARGIN_RULE: number;
+                NAMESPACE_RULE: number;
+                COUNTER_STYLE_RULE: number;
+                SUPPORTS_RULE: number;
+                DOCUMENT_RULE: number; /**
+                 * @param {Element} newNode
+                 * @param {Element} oldNode
+                 */
+                FONT_FEATURE_VALUES_RULE: number;
+                VIEWPORT_RULE: number;
+                REGION_STYLE_RULE: number;
+            };
+        };
+        CSSValue: {
+            new (): {
+                cssText: void;
+                _getConstructorName(): string;
+            };
+        };
+        CSSValueExpression: {
+            new (token: any, idx: any): {
+                _token: any;
+                _idx: any;
+                parse(): Object;
+                _parseJSComment(token: any, idx: any): false | Object;
+                _parseJSString(token: any, idx: any, sep: any): false | Object;
+                _parseJSRexExp(token: any, idx: any): false | Object;
+                _findMatchedIdx(token: any, idx: any, sep: any): number;
+                cssText: void;
+                _getConstructorName(): string;
+            };
+        };
+        parse: (token: string) => {
+            cssRules: any[];
+            insertRule(rule: string, index: number): number;
+            deleteRule(index: number): void;
+            toString(): string;
+            parentStyleSheet: any;
+        };
+        clone: (stylesheet: {
+            cssRules: any[];
+            insertRule(rule: string, index: number): number;
+            deleteRule(index: number): void;
+            toString(): string;
+            parentStyleSheet: any;
+        }) => {
+            cssRules: any[];
+            insertRule(rule: string, index: number): number;
+            deleteRule(index: number): void;
+            toString(): string;
+            parentStyleSheet: any;
+        };
+    };
+    CSSMediaRule: {
+        new (): {
+            media: {
+                length: number;
+                mediaText: string;
+                appendMedium(medium: string): void;
+                deleteMedium(medium: string): void;
+            };
+            type: number;
+            conditionText: string;
+            readonly cssText: string;
+            cssRules: any[];
+            insertRule(rule: string, index?: number | undefined): number;
+            deleteRule(index: number): void;
+            parentRule: any;
+            parentStyleSheet: any;
+            UNKNOWN_RULE: number; /** @type {string} */
+            STYLE_RULE: number;
+            CHARSET_RULE: number;
+            IMPORT_RULE: number;
+            MEDIA_RULE: number;
+            FONT_FACE_RULE: number;
+            PAGE_RULE: number;
+            KEYFRAMES_RULE: number;
+            KEYFRAME_RULE: number;
+            MARGIN_RULE: number;
+            NAMESPACE_RULE: number;
+            COUNTER_STYLE_RULE: number;
+            SUPPORTS_RULE: number;
+            DOCUMENT_RULE: number; /**
+             * @param {Element} newNode
+             * @param {Element} oldNode
+             */
+            FONT_FEATURE_VALUES_RULE: number;
+            VIEWPORT_RULE: number;
+            REGION_STYLE_RULE: number;
+        };
+    };
+    CSSStyleRule: {
+        new (): {
+            selectorText: string;
+            style: {
+                length: number;
+                parentRule: any;
+                _importants: {};
+                getPropertyValue(name: string): string;
+                setProperty(name: string, value: string, priority?: string | undefined): void;
+                removeProperty(name: string): string;
+                getPropertyCSSValue(): void;
+                getPropertyPriority(name: string): any;
+                getPropertyShorthand(): void;
+                isPropertyImplicit(): void;
+                cssText: string;
+            };
+            type: number;
+            cssText: string;
+            parse(ruleText: string): any;
+            parentRule: any;
+            parentStyleSheet: any;
+            UNKNOWN_RULE: number; /** @type {string} */
+            STYLE_RULE: number;
+            CHARSET_RULE: number;
+            IMPORT_RULE: number;
+            MEDIA_RULE: number;
+            FONT_FACE_RULE: number;
+            PAGE_RULE: number;
+            KEYFRAMES_RULE: number;
+            KEYFRAME_RULE: number;
+            MARGIN_RULE: number;
+            NAMESPACE_RULE: number;
+            COUNTER_STYLE_RULE: number;
+            SUPPORTS_RULE: number;
+            DOCUMENT_RULE: number; /**
+             * @param {Element} newNode
+             * @param {Element} oldNode
+             */
+            FONT_FEATURE_VALUES_RULE: number;
+            VIEWPORT_RULE: number;
+            REGION_STYLE_RULE: number;
+        };
+    };
+    document: HTMLDocument;
+    Location: typeof Location;
+    Element: typeof Element;
+    HTMLOptionElement: typeof HTMLOptionElement;
+    HTMLInputElement: typeof HTMLInputElement;
+    SVGElement: typeof SVGElement;
+    HTMLElement: typeof HTMLElement;
+    MathMLElement: typeof MathMLElement;
+    Text: typeof Text;
+    Comment: typeof Comment;
+    EventSource: typeof EventSource;
+    addEventListener: () => void;
+    isSkruvSSR: boolean;
+};

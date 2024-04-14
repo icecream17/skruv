@@ -30,6 +30,7 @@ export const render = (
     if (currentNode) { parentNode.removeChild(currentNode) }
     return
   }
+  // @ts-ignore
   if (!globalThis?.isSkruvSSR && current?.t?.toLowerCase() === 'skruvtext' && current?.c?.[0]) {
     current.r = () => {
       // @ts-expect-error
@@ -87,7 +88,8 @@ export const render = (
   if (current.t === 'foreignObject') { ns = htmlNS }
   /** @type {import("./utilityTypes").Vnode[]} */
   // @ts-expect-error
-  let children = current.c.flat(Infinity)
+  let children = current.c.flat(Infinity)/** @type {string | URL} */
+  // @ts-expect-error
   if (!globalThis?.isSkruvSSR) { children = children.filter(c => !c?.t?.startsWith('skruv')) }
   /** @type {import("./utilityTypes").attributes} */
   // @ts-expect-error

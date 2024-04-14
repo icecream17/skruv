@@ -1,5 +1,5 @@
 /* global Location */
-import '../utils/minidom.js'
+import './globals.js'
 
 import assert from 'node:assert'
 import test from 'node:test'

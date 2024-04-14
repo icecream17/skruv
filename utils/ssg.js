@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import vm from "node:vm";
 import { readFile, writeFile } from 'node:fs/promises'
-import { resolve } from "node:path";
+import { resolve } from 'node:path'
+import vm from 'node:vm'
 
-import { createContext, Location } from "skruv/utils/minidom.js";
+import { createContext, Location } from './minidom.js'
 
 const location = process.argv[2]
 const input = process.argv[3]
@@ -14,21 +14,23 @@ if (!location || !input || !output) {
   process.exit(1)
 }
 
-const skruvSSRScript = await readFile(resolve(process.cwd(), '/', input), "utf8");
+(async () => {
+  const skruvSSRScript = await readFile(resolve(process.cwd(), input), 'utf8')
 
-const _fetch = fetch;
+  const _fetch = fetch
 
-const context = {
-  ...createContext(),
-  skruvSSRScript,
-  location: new Location(location),
-  console,
-  fetch: async (url, opt = {}) => _fetch(new URL(url, location), opt)
-}
+  const context = {
+    ...createContext(),
+    skruvSSRScript,
+    location: new Location(location),
+    console,
+    fetch: async (/** @type {string | URL} */ url, opt = {}) => _fetch(new URL(url, location), opt)
+  }
 
-const contextifiedObject = vm.createContext(context);
-const runningVm = new vm.SourceTextModule(skruvSSRScript, { context: contextifiedObject })
-await runningVm.link(async function linker(specifier, referencingModule) { throw new Error(`Unable to resolve dependency: ${specifier}`) })
-await runningVm.evaluate()
-await contextifiedObject.finish();
-await writeFile(output, contextifiedObject.document.documentElement.innerHTML)
+  const contextifiedObject = vm.createContext(context)
+  const runningVm = new vm.SourceTextModule(skruvSSRScript, { context: contextifiedObject })
+  await runningVm.link(async function linker (specifier, referencingModule) { throw new Error(`Unable to resolve dependency: ${specifier}`) })
+  await runningVm.evaluate()
+  if (contextifiedObject.finish) { await contextifiedObject.finish() }
+  await writeFile(output, contextifiedObject.document.documentElement.innerHTML)
+})()
