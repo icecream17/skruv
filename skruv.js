@@ -30,7 +30,9 @@ export const render = (
     if (currentNode) { parentNode.removeChild(currentNode) }
     return
   }
-  if (!globalThis?.isSkruvSSR && current?.t?.toLowerCase() === 'skruvtext' && current?.c?.[0]) {
+  // TODO: Try-remove
+  // @ts-expect-error
+  if (!globalThis?.isSkruvSSR && current?.t === 'skruvtext' && current?.c?.[0]) {
     current.r = () => {
       // @ts-expect-error
       if (!currentNode || !parentNode.contains(currentNode)) { return false }
@@ -88,6 +90,7 @@ export const render = (
   /** @type {import("./utilityTypes").Vnode[]} */
   // @ts-expect-error
   let children = current.c.flat(Infinity)
+  // TODO: Try-remove
   if (!globalThis?.isSkruvSSR) { children = children.filter(c => !c?.t?.startsWith('skruv')) }
   /** @type {import("./utilityTypes").attributes} */
   // @ts-expect-error
