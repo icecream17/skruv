@@ -293,6 +293,35 @@ export const reset = () => {
 }
 reset()
 
+export const getContext = () => {
+  const _document = { ...document }
+  const rootElement = new HTMLElement('document')
+  const documentElement = new HTMLElement('html')
+  documentElement.parentNode = rootElement
+  rootElement.childNodes = [documentElement]
+  _document.documentElement = documentElement
+  return {
+    document: _document,
+    EventSource,
+    Location,
+    URL,
+    Element,
+    HTMLOptionElement,
+    HTMLInputElement,
+    SVGElement,
+    HTMLElement,
+    MathMLElement,
+    Text,
+    Comment,
+    CSSOM: cssom,
+    CSSMediaRule: cssom.CSSMediaRule,
+    CSSStyleRule: cssom.CSSStyleRule,
+    isSkruvSSR: true,
+    setTimeout: setTimeout,
+    addEventListener: () => { }
+  }
+}
+
 // HTML rendering utils
 
 /** @param {string} s */
