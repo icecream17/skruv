@@ -7,18 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Set up caching for npm
-      id: cache-node_modules
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.npm
-          **/node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node_modules-
     - name: Install Node packages
-      if: steps.cache-node_modules.outputs.cache-hit != 'true'
       env:
         NODE_ENV: development
       run: |
